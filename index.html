@@ -1,0 +1,1382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Portionly — Your Portion Assistant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@18",
+    "react-dom/client": "https://esm.sh/react-dom@18/client",
+    "htm": "https://esm.sh/htm@3"
+  }
+}
+</script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #F5F7F2;
+    --card: #FFFFFF;
+    --border: #E0E6DC;
+    --green: #6BAA78;
+    --green-dark: #4D8060;
+    --green-light: #EBF4EE;
+    --peach: #F0C4A8;
+    --peach-light: #FDF3EC;
+    --text: #1C2519;
+    --muted: #738070;
+    --error: #E24B4A;
+    --protein: #D97B6B;
+    --carbs: #C9A84C;
+    --fat: #7FAED0;
+    --fiber: #9B8B5C;
+    --sol-fiber: #A8D5BA;
+    --insol-fiber: #D4AF85;
+    --radius-card: 20px;
+    --radius-btn: 14px;
+    --radius-input: 12px;
+  }
+  html, body { height: 100%; font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); }
+  #root { height: 100%; display: flex; flex-direction: column; align-items: center; background: var(--bg); }
+  .app-shell { width: 100%; max-width: 480px; height: 100dvh; display: flex; flex-direction: column; position: relative; background: var(--bg); }
+  
+  /* Header */
+  .app-header { 
+    background: var(--card); border-bottom: 1px solid var(--border);
+    padding: 12px 16px 10px; flex-shrink: 0; z-index: 10;
+  }
+  .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .header-name { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600; color: var(--green-dark); }
+  .header-subtitle { font-size: 11px; color: var(--muted); font-weight: 400; }
+  .macro-pills { display: flex; gap: 5px; flex-wrap: wrap; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 3px;
+    padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: 600;
+    color: white; transition: all 0.15s;
+  }
+  .pill-kcal { background: var(--green-dark); }
+  .pill-protein { background: var(--protein); }
+  .pill-carbs { background: var(--carbs); }
+  .pill-fat { background: var(--fat); }
+  .pill-fiber { background: var(--fiber); }
+
+  /* Bottom nav */
+  .bottom-nav {
+    background: var(--card); border-top: 1px solid var(--border);
+    display: flex; flex-shrink: 0; z-index: 10;
+  }
+  .nav-btn {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; padding: 8px 4px; border: none; background: transparent;
+    cursor: pointer; transition: all 0.15s; gap: 2px; color: var(--muted);
+  }
+  .nav-btn.active { color: var(--green-dark); }
+  .nav-btn:active { opacity: 0.7; }
+  .nav-icon { font-size: 18px; line-height: 1; }
+  .nav-label { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; font-family: 'DM Sans', sans-serif; }
+
+  /* Content area */
+  .content-area { flex: 1; overflow-y: auto; padding: 16px; -webkit-overflow-scrolling: touch; }
+
+  /* Cards */
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius-card); padding: 16px; margin-bottom: 12px;
+    transition: all 0.15s;
+  }
+  .card-title { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 600; margin-bottom: 4px; }
+  .card-sub { font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+
+  /* Buttons */
+  .btn {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    width: 100%; padding: 13px 16px; border-radius: var(--radius-btn);
+    border: none; cursor: pointer; font-family: 'DM Sans', sans-serif;
+    font-size: 14px; font-weight: 600; transition: all 0.15s;
+  }
+  .btn-primary { background: var(--green); color: white; }
+  .btn-primary:hover { background: var(--green-dark); }
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-secondary { background: var(--green-light); color: var(--green-dark); }
+  .btn-secondary:hover { background: var(--border); }
+  .btn-outline { background: transparent; color: var(--green-dark); border: 1.5px solid var(--green); }
+  .btn-danger { background: #FEE; color: var(--error); border: 1.5px solid #FCCCC; }
+  .btn-sm { padding: 8px 14px; font-size: 12px; width: auto; border-radius: 10px; }
+
+  /* Inputs */
+  .input-label { font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 5px; display: block; letter-spacing: 0.3px; text-transform: uppercase; }
+  .input {
+    width: 100%; padding: 11px 13px; border-radius: var(--radius-input);
+    border: 1.5px solid var(--border); font-family: 'DM Sans', sans-serif;
+    font-size: 14px; color: var(--text); background: var(--bg);
+    transition: all 0.15s; outline: none;
+  }
+  .input:focus { border-color: var(--green); background: white; }
+  .input::placeholder { color: var(--muted); opacity: 0.7; }
+  textarea.input { resize: vertical; min-height: 100px; }
+  .input-group { margin-bottom: 12px; }
+
+  /* Toggle */
+  .toggle-group { display: flex; background: var(--bg); border-radius: 12px; padding: 3px; margin-bottom: 14px; border: 1px solid var(--border); }
+  .toggle-btn {
+    flex: 1; padding: 8px; border-radius: 9px; border: none; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+    background: transparent; color: var(--muted); transition: all 0.15s;
+  }
+  .toggle-btn.active { background: white; color: var(--green-dark); font-weight: 600; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+
+  /* Sliders */
+  .slider-wrap { margin-bottom: 14px; }
+  .slider-header { display: flex; justify-content: space-between; margin-bottom: 6px; }
+  .slider-label { font-size: 13px; font-weight: 600; }
+  .slider-val { font-size: 13px; color: var(--muted); font-weight: 500; }
+  input[type=range] {
+    -webkit-appearance: none; width: 100%; height: 5px;
+    border-radius: 3px; background: var(--border); outline: none; cursor: pointer;
+    transition: all 0.15s;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%;
+    background: var(--green-dark); cursor: pointer; border: 2px solid white;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+  }
+
+  /* Full-screen states */
+  .fullscreen { 
+    position: fixed; inset: 0; background: var(--bg);
+    display: flex; align-items: flex-start; justify-content: center;
+    padding: 24px 16px 48px; z-index: 100;
+    overflow-y: auto; -webkit-overflow-scrolling: touch;
+  }
+  .fullscreen-card {
+    background: var(--card); border-radius: 24px; padding: 32px 24px;
+    width: 100%; max-width: 420px; border: 1px solid var(--border);
+    box-shadow: 0 8px 40px rgba(0,0,0,0.08);
+  }
+
+  /* Progress bar */
+  .progress-bar-wrap { margin-bottom: 24px; }
+  .progress-track { height: 4px; background: var(--border); border-radius: 2px; }
+  .progress-fill { height: 100%; background: var(--green); border-radius: 2px; transition: width 0.3s; }
+  .progress-label { font-size: 11px; color: var(--muted); text-align: right; margin-top: 4px; }
+
+  /* Onboarding option cards */
+  .option-grid { display: grid; gap: 8px; margin-bottom: 14px; }
+  .option-grid-2 { grid-template-columns: 1fr 1fr; }
+  .option-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .option-card {
+    padding: 12px; border-radius: 14px; border: 1.5px solid var(--border);
+    cursor: pointer; text-align: center; transition: all 0.15s; background: var(--bg);
+  }
+  .option-card.selected { border-color: var(--green); background: var(--green-light); }
+  .option-card .option-icon { font-size: 22px; margin-bottom: 4px; }
+  .option-card .option-label { font-size: 12px; font-weight: 600; color: var(--text); }
+  .option-card .option-desc { font-size: 10px; color: var(--muted); margin-top: 2px; line-height: 1.3; }
+
+  /* Result card */
+  .result-badge { 
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+    margin: 2px; color: white;
+  }
+  .macro-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 12px 0; }
+  .macro-box { text-align: center; padding: 10px 6px; border-radius: 12px; }
+  .macro-box-val { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 700; }
+  .macro-box-label { font-size: 10px; color: var(--muted); margin-top: 2px; }
+  .macro-box-unit { font-size: 10px; color: var(--muted); }
+
+  /* Log */
+  .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0; }
+  .summary-item { background: var(--bg); border-radius: 12px; padding: 10px; border: 1px solid var(--border); }
+  .summary-item-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.3px; font-weight: 600; }
+  .summary-item-val { font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; margin-top: 2px; }
+  .summary-item-target { font-size: 10px; color: var(--muted); }
+  .log-entry { 
+    display: flex; align-items: center; padding: 10px 12px; background: var(--card);
+    border: 1px solid var(--border); border-radius: 14px; margin-bottom: 8px; gap: 10px;
+    transition: all 0.15s;
+  }
+  .log-entry-info { flex: 1; }
+  .log-entry-name { font-size: 14px; font-weight: 600; }
+  .log-entry-time { font-size: 10px; color: var(--muted); }
+  .log-entry-kcal { font-size: 14px; font-weight: 700; color: var(--green-dark); white-space: nowrap; }
+  .delete-btn { background: none; border: none; cursor: pointer; padding: 4px; color: var(--muted); font-size: 16px; transition: all 0.15s; }
+  .delete-btn:hover { color: var(--error); }
+
+  /* Goals */
+  .kcal-hero { 
+    background: var(--green-dark); color: white; border-radius: 20px;
+    padding: 24px; text-align: center; margin-bottom: 12px;
+  }
+  .kcal-hero-num { font-family: 'Fraunces', serif; font-size: 52px; font-weight: 700; line-height: 1; }
+  .kcal-hero-label { font-size: 14px; opacity: 0.85; margin-top: 4px; }
+  .meal-guide-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+  .meal-guide-box { text-align: center; padding: 12px 6px; border-radius: 14px; border: 1px solid var(--border); background: var(--card); }
+  .meal-guide-val { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 600; }
+  .meal-guide-label { font-size: 10px; color: var(--muted); margin-top: 2px; }
+  .fiber-bar-wrap { margin: 8px 0; }
+  .fiber-bar-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
+  .fiber-bar-track { height: 8px; background: var(--border); border-radius: 4px; margin-bottom: 8px; }
+  .fiber-bar-fill { height: 100%; border-radius: 4px; transition: width 0.4s; }
+  .profile-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .profile-table td { padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .profile-table td:first-child { color: var(--muted); font-weight: 500; }
+  .profile-table td:last-child { text-align: right; font-weight: 600; }
+
+  /* Saved */
+  .saved-card {
+    border: 1px solid var(--border); border-radius: 18px; background: var(--card);
+    margin-bottom: 10px; overflow: hidden; transition: all 0.15s;
+  }
+  .saved-card-header { padding: 14px 14px 10px; cursor: pointer; display: flex; align-items: flex-start; gap: 10px; }
+  .saved-card-body { padding: 0 14px 14px; border-top: 1px solid var(--border); margin-top: 2px; }
+  .saved-card-name { font-family: 'Fraunces', serif; font-size: 15px; font-weight: 600; flex: 1; }
+  .saved-card-date { font-size: 10px; color: var(--muted); margin-top: 2px; }
+  .pills-row { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+
+  /* Upload area */
+  .upload-area {
+    border: 2px dashed var(--border); border-radius: 16px; padding: 28px;
+    text-align: center; cursor: pointer; transition: all 0.15s; background: var(--bg);
+    margin-bottom: 12px;
+  }
+  .upload-area:hover, .upload-area.drag-over { border-color: var(--green); background: var(--green-light); }
+  .upload-icon { font-size: 32px; margin-bottom: 8px; }
+  .upload-text { font-size: 13px; color: var(--muted); }
+  .img-preview { width: 100%; border-radius: 12px; max-height: 220px; object-fit: cover; margin-bottom: 12px; }
+
+  /* Loading */
+  .loading-wrap { text-align: center; padding: 32px 16px; }
+  .loading-spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--green); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-msg { font-size: 13px; color: var(--muted); }
+
+  /* Error */
+  .error-box { background: #FEE2E2; border: 1px solid #FCCACA; border-radius: 12px; padding: 12px; font-size: 13px; color: var(--error); margin-bottom: 12px; }
+
+  /* Section headers */
+  .section-title { font-family: 'Fraunces', serif; font-size: 15px; font-weight: 600; margin-bottom: 10px; color: var(--text); }
+  .divider { height: 1px; background: var(--border); margin: 14px 0; }
+
+  /* Expandable recipe */
+  .recipe-expand-card {
+    border: 1px solid var(--border); border-radius: 18px; overflow: hidden;
+    margin-bottom: 10px; background: var(--card); transition: all 0.15s;
+  }
+  .recipe-expand-header { padding: 14px; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+  .recipe-expand-body { border-top: 1px solid var(--border); padding: 14px; }
+  .recipe-time { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  /* Steps list */
+  .steps-list { list-style: none; }
+  .steps-list li { padding: 6px 0; font-size: 13px; border-bottom: 1px solid var(--border); display: flex; gap: 8px; }
+  .steps-list li:last-child { border-bottom: none; }
+  .step-num { width: 20px; height: 20px; background: var(--green-light); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: var(--green-dark); flex-shrink: 0; margin-top: 1px; }
+
+  /* Utility */
+  .flex-row { display: flex; align-items: center; gap: 8px; }
+  .flex-between { display: flex; align-items: center; justify-content: space-between; }
+  .text-muted { color: var(--muted); font-size: 12px; }
+  .mt-8 { margin-top: 8px; }
+  .mt-12 { margin-top: 12px; }
+  .mb-8 { margin-bottom: 8px; }
+  .star-btn { background: none; border: none; cursor: pointer; font-size: 20px; padding: 4px; transition: all 0.15s; }
+  .star-btn:hover { transform: scale(1.15); }
+  .trash-btn { background: none; border: none; cursor: pointer; font-size: 16px; padding: 4px; color: var(--muted); transition: all 0.15s; }
+  .trash-btn:hover { color: var(--error); }
+  .chevron { transition: transform 0.2s; font-size: 14px; color: var(--muted); }
+  .chevron.open { transform: rotate(180deg); }
+  .tip-box { background: var(--peach-light); border: 1px solid var(--peach); border-radius: 12px; padding: 10px 12px; font-size: 12px; margin-top: 10px; }
+  .tip-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; color: var(--peach); margin-bottom: 3px; }
+  .empty-state { text-align: center; padding: 48px 24px; color: var(--muted); }
+  .empty-state-icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-state-text { font-size: 14px; line-height: 1.5; }
+  .portion-desc-box { background: var(--green-light); border-radius: 12px; padding: 10px 12px; font-size: 13px; border: 1px solid var(--border); margin: 10px 0; }
+  .ingredients-list { font-size: 13px; }
+  .ingredients-list li { padding: 4px 0; border-bottom: 1px solid var(--border); }
+  .ingredients-list li:last-child { border-bottom: none; }
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .logo-mark { font-family: 'Fraunces', serif; font-size: 32px; font-weight: 700; color: var(--green-dark); margin-bottom: 4px; }
+  .logo-sub { font-size: 12px; color: var(--muted); margin-bottom: 24px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="module">
+import { createElement, useState, useEffect, useRef, useCallback } from 'react';
+import { createRoot } from 'react-dom/client';
+import htm from 'htm';
+const html = htm.bind(createElement);
+
+// ─── Storage helpers ───────────────────────────────────────────────────
+const LS = {
+  get: (k, fallback = null) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fallback; } catch { return fallback; } },
+  set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  del: (k) => { try { localStorage.removeItem(k); } catch {} }
+};
+
+// ─── Nutrition calculators ─────────────────────────────────────────────
+function calcProfile(data) {
+  const { name, sex, age, heightCm, weightKg, activity, goal, proteinPct, carbPct, fatPct } = data;
+  const bmr = sex === 'female'
+    ? 10 * weightKg + 6.25 * heightCm - 5 * age - 161
+    : 10 * weightKg + 6.25 * heightCm - 5 * age + 5;
+  const mults = { sedentary: 1.2, light: 1.375, moderate: 1.55, active: 1.725 };
+  let tdee = bmr * mults[activity];
+  if (goal === 'lose') tdee -= 400;
+  else if (goal === 'gain') tdee += 250;
+  tdee = Math.round(tdee);
+  const protein = Math.round((tdee * proteinPct / 100) / 4);
+  const carbs = Math.round((tdee * carbPct / 100) / 4);
+  const fat = Math.round((tdee * fatPct / 100) / 9);
+  const fiberTotal = sex === 'female' ? 25 : 38;
+  const fiberSol = Math.round(fiberTotal * 0.3);
+  const fiberInsol = fiberTotal - fiberSol;
+  return { ...data, tdee, protein, carbs, fat, fiberTotal, fiberSol, fiberInsol };
+}
+
+
+// ─── API helper (Google Gemini 1.5 Flash — free tier) ─────────────────
+async function callClaude(apiKey, systemPrompt, userContent) {
+  const parts = [];
+  if (Array.isArray(userContent)) {
+    for (const block of userContent) {
+      if (block.type === 'text') parts.push({ text: block.text });
+      else if (block.type === 'image') parts.push({ inlineData: { mimeType: block.source.media_type || 'image/jpeg', data: block.source.data } });
+    }
+  } else {
+    parts.push({ text: userContent });
+  }
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: systemPrompt }] },
+        contents: [{ role: 'user', parts }],
+        generationConfig: { maxOutputTokens: 1500, temperature: 0.3 }
+      })
+    }
+  );
+  if (!res.ok) {
+    const t = await res.json().catch(() => ({}));
+    throw new Error(t?.error?.message || `API error ${res.status}`);
+  }
+  const data = await res.json();
+  const raw = data.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || '';
+  const clean = raw.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
+  return JSON.parse(clean);
+}
+
+function profileSummary(p) {
+  return `User profile: TDEE ${p.tdee} kcal/day, Protein ${p.protein}g, Carbs ${p.carbs}g, Fat ${p.fat}g, Fiber ${p.fiberTotal}g (${p.fiberSol}g soluble, ${p.fiberInsol}g insoluble). Goal: ${p.goal}. Activity: ${p.activity}.`;
+}
+
+// ─── Pill component ─────────────────────────────────────────────────────
+function Pill({ color, label, val }) {
+  return html`<span class="pill" style=${{ background: color }}>${val}${' '}${label}</span>`;
+}
+
+// ─── MacroBadge ─────────────────────────────────────────────────────────
+function MacroBadge({ color, label, val, unit = 'g' }) {
+  return html`<div class="macro-box" style=${{ background: color + '22', border: `1px solid ${color}44` }}>
+    <div class="macro-box-val" style=${{ color }}>${val}</div>
+    <div class="macro-box-unit" style=${{ color: color }}>${unit}</div>
+    <div class="macro-box-label">${label}</div>
+  </div>`;
+}
+
+// ─── API KEY GATE ────────────────────────────────────────────────────────
+function ApiKeyGate({ onSave }) {
+  const [key, setKey] = useState('');
+  const [err, setErr] = useState('');
+  const submit = () => {
+    if (!key.trim().startsWith('AIza') && key.trim().length < 10) { setErr('Please enter a valid Gemini API key'); return; }
+    onSave(key.trim());
+  };
+  return html`
+    <div class="fullscreen">
+      <div class="fullscreen-card">
+        <div class="logo-mark">Portionly</div>
+        <div class="logo-sub">Your personal portion assistant</div>
+        <div class="card-title" style=${{ marginBottom: 4 }}>One-time setup</div>
+        <p class="text-muted" style=${{ marginBottom: 20, lineHeight: 1.5 }}>
+          Portionly uses Google Gemini to analyse your food. The free tier covers 1,500 requests/day — no credit card needed.
+        </p>
+        <div class="input-group">
+          <label class="input-label">Google Gemini API Key</label>
+          <input class="input" type="password" placeholder="AIza..." value=${key} onInput=${e => setKey(e.target.value)} />
+          <p class="text-muted mt-8">Stored only in your browser — never sent anywhere except Google directly.</p>
+        </div>
+        ${err && html`<div class="error-box">${err}</div>`}
+        <button class="btn btn-primary" onClick=${submit}>Continue →</button>
+        <p class="text-muted mt-8" style=${{ textAlign: 'center' }}>
+          <a href="https://aistudio.google.com/app/apikey" target="_blank" style=${{ color: 'var(--green-dark)' }}>Get a free key at aistudio.google.com →</a>
+        </p>
+      </div>
+    </div>`;
+}
+
+// ─── ONBOARDING ──────────────────────────────────────────────────────────
+function Onboarding({ onComplete }) {
+  const [step, setStep] = useState(1);
+  const [form, setForm] = useState({
+    name: '', sex: 'female', age: '', heightCm: '', weightKg: '',
+    activity: 'moderate', goal: 'maintain',
+    proteinPct: 30, carbPct: 45, fatPct: 25
+  });
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const adjustMacros = (changed, val) => {
+    const others = ['proteinPct','carbPct','fatPct'].filter(k => k !== changed);
+    const remaining = 100 - val;
+    const currentOtherTotal = form[others[0]] + form[others[1]];
+    let a = currentOtherTotal > 0 ? Math.round(remaining * form[others[0]] / currentOtherTotal) : Math.round(remaining / 2);
+    let b = remaining - a;
+    if (a < 5) { a = 5; b = remaining - 5; }
+    if (b < 5) { b = 5; a = remaining - 5; }
+    setForm(f => ({ ...f, [changed]: val, [others[0]]: a, [others[1]]: b }));
+  };
+
+  const next = () => {
+    if (step === 1 && !form.name.trim()) return;
+    if (step === 2 && (!form.age || !form.heightCm || !form.weightKg)) return;
+    if (step < 3) { setStep(s => s + 1); return; }
+    onComplete(form);
+  };
+
+  return html`
+    <div class="fullscreen" style=${{ paddingTop: 32 }}>
+      <div class="fullscreen-card">
+        <div class="logo-mark">Portionly</div>
+        <div class="progress-bar-wrap">
+          <div class="progress-track"><div class="progress-fill" style=${{ width: (step/3*100)+'%' }}></div></div>
+          <div class="progress-label">Step ${step} of 3</div>
+        </div>
+        ${step === 1 && html`
+          <div class="card-title">Let's start with you</div>
+          <div class="card-sub">We'll use this to calculate your ideal portions.</div>
+          <div class="input-group">
+            <label class="input-label">Your name</label>
+            <input class="input" type="text" placeholder="e.g. Alex" value=${form.name} onInput=${e => set('name', e.target.value)} />
+          </div>
+          <div class="input-group">
+            <label class="input-label">Biological sex</label>
+            <div class="toggle-group">
+              <button class=${'toggle-btn' + (form.sex==='female' ? ' active' : '')} onClick=${()=>set('sex','female')}>♀ Female</button>
+              <button class=${'toggle-btn' + (form.sex==='male' ? ' active' : '')} onClick=${()=>set('sex','male')}>♂ Male</button>
+            </div>
+          </div>
+        `}
+        ${step === 2 && html`
+          <div class="card-title">Your body stats</div>
+          <div class="card-sub">Used to estimate your daily energy needs.</div>
+          <div class="input-group">
+            <label class="input-label">Age</label>
+            <input class="input" type="number" placeholder="e.g. 28" value=${form.age} onInput=${e => set('age', Number(e.target.value))} />
+          </div>
+          <div class="row-2">
+            <div class="input-group">
+              <label class="input-label">Height (cm)</label>
+              <input class="input" type="number" placeholder="e.g. 168" value=${form.heightCm} onInput=${e => set('heightCm', Number(e.target.value))} />
+            </div>
+            <div class="input-group">
+              <label class="input-label">Weight (kg)</label>
+              <input class="input" type="number" placeholder="e.g. 65" value=${form.weightKg} onInput=${e => set('weightKg', Number(e.target.value))} />
+            </div>
+          </div>
+        `}
+        ${step === 3 && html`
+          <div class="card-title">Lifestyle & goals</div>
+          <div class="card-sub">Personalises your daily calorie and macro targets.</div>
+          <label class="input-label">Activity level</label>
+          <div class="option-grid option-grid-2" style=${{ marginBottom: 14 }}>
+            ${[
+              { key:'sedentary', icon:'🪑', label:'Sedentary', desc:'Desk job, little movement' },
+              { key:'light', icon:'🚶', label:'Light', desc:'1–3 days/week active' },
+              { key:'moderate', icon:'🏃', label:'Moderate', desc:'3–5 days/week active' },
+              { key:'active', icon:'💪', label:'Very active', desc:'Hard training 6–7 days' }
+            ].map(o => html`
+              <div class=${'option-card' + (form.activity===o.key ? ' selected' : '')} onClick=${()=>set('activity',o.key)} key=${o.key}>
+                <div class="option-icon">${o.icon}</div>
+                <div class="option-label">${o.label}</div>
+                <div class="option-desc">${o.desc}</div>
+              </div>`)}
+          </div>
+          <label class="input-label">Goal</label>
+          <div class="option-grid option-grid-3" style=${{ marginBottom: 14 }}>
+            ${[
+              { key:'lose', icon:'📉', label:'Lose' },
+              { key:'maintain', icon:'⚖️', label:'Maintain' },
+              { key:'gain', icon:'📈', label:'Gain' }
+            ].map(o => html`
+              <div class=${'option-card' + (form.goal===o.key ? ' selected' : '')} onClick=${()=>set('goal',o.key)} key=${o.key}>
+                <div class="option-icon">${o.icon}</div>
+                <div class="option-label">${o.label}</div>
+              </div>`)}
+          </div>
+          <label class="input-label">Macro split (must total 100%)</label>
+          ${[
+            { key:'proteinPct', label:'Protein', color:'var(--protein)' },
+            { key:'carbPct', label:'Carbs', color:'var(--carbs)' },
+            { key:'fatPct', label:'Fat', color:'var(--fat)' }
+          ].map(m => html`
+            <div class="slider-wrap" key=${m.key}>
+              <div class="slider-header">
+                <span class="slider-label" style=${{ color: m.color }}>${m.label}</span>
+                <span class="slider-val">${form[m.key]}%</span>
+              </div>
+              <input type="range" min="5" max="70" value=${form[m.key]}
+                style=${{ accentColor: m.color }}
+                onInput=${e => adjustMacros(m.key, Number(e.target.value))} />
+            </div>`)}
+          <div class="text-muted" style=${{ textAlign: 'center' }}>Total: ${form.proteinPct + form.carbPct + form.fatPct}%</div>
+        `}
+        <button class="btn btn-primary mt-12" onClick=${next} style=${{ marginTop: 20 }}>
+          ${step < 3 ? 'Continue →' : '✓ Set up my profile'}
+        </button>
+      </div>
+    </div>`;
+}
+
+// ─── RESULT CARD ──────────────────────────────────────────────────────────
+function ResultCard({ result, onSave, isSaved }) {
+  if (!result) return null;
+  const r = result;
+  return html`
+    <div class="card">
+      <div class="flex-between mb-8">
+        <div class="card-title" style=${{ marginBottom: 0 }}>${r.dishName || r.name || 'Your meal'}</div>
+        <button class="star-btn" onClick=${onSave} title=${isSaved ? 'Saved!' : 'Save'}>
+          ${isSaved ? '⭐' : '☆'}
+        </button>
+      </div>
+      ${r.portionDescription && html`
+        <div class="portion-desc-box">🥣 ${r.portionDescription}</div>
+      `}
+      <div class="macro-grid">
+        <${MacroBadge} color="var(--green-dark)" label="Calories" val=${Math.round(r.portionCalories||r.calories||0)} unit="kcal" />
+        <${MacroBadge} color="var(--protein)" label="Protein" val=${Math.round(r.portionProtein||r.protein||0)} unit="g" />
+        <${MacroBadge} color="var(--carbs)" label="Carbs" val=${Math.round(r.portionCarbs||r.carbs||0)} unit="g" />
+        <${MacroBadge} color="var(--fat)" label="Fat" val=${Math.round(r.portionFat||r.fat||0)} unit="g" />
+      </div>
+      <div class="flex-row mb-8">
+        <span class="result-badge" style=${{ background:'var(--fiber)' }}>🌾 ${Math.round(r.portionFiber||r.totalFiber||0)}g fiber</span>
+        ${r.portionSolFiber && html`<span class="result-badge" style=${{ background:'var(--sol-fiber)', color:'var(--text)' }}>Soluble ${Math.round(r.portionSolFiber)}g</span>`}
+        ${r.portionInsolFiber && html`<span class="result-badge" style=${{ background:'var(--insol-fiber)', color:'var(--text)' }}>Insoluble ${Math.round(r.portionInsolFiber)}g</span>`}
+      </div>
+      ${r.recommendedServings && html`
+        <p class="text-muted" style=${{ marginBottom: 6 }}>Recommended: <strong>${r.recommendedServings} servings</strong> of ${r.totalServings} total</p>
+      `}
+      ${r.cookingForOne && html`
+        <p class="text-muted" style=${{ marginBottom: 6 }}>🍳 Cooking for 1: ${r.cookingForOne}</p>
+      `}
+      ${r.scaledIngredients && r.scaledIngredients.length > 0 && html`
+        <div class="divider"></div>
+        <div class="section-title">Your portion ingredients</div>
+        <ul class="ingredients-list">
+          ${r.scaledIngredients.map((ing, i) => html`<li key=${i}>${ing}</li>`)}
+        </ul>
+      `}
+      ${r.tip && html`
+        <div class="tip-box">
+          <div class="tip-label">💡 Tip</div>
+          ${r.tip}
+        </div>
+      `}
+    </div>`;
+}
+
+// ─── TAB: RECIPE ─────────────────────────────────────────────────────────
+function RecipeTab({ profile, apiKey }) {
+  const [mode, setMode] = useState('text');
+  const [text, setText] = useState('');
+  const [img, setImg] = useState(null);
+  const [imgB64, setImgB64] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [result, setResult] = useState(null);
+  const [saved, setSaved] = useState(false);
+  const fileRef = useRef();
+
+  const handleImg = (file) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      setImg(e.target.result);
+      setImgB64(e.target.result.split(',')[1]);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const analyze = async () => {
+    setError(''); setResult(null); setSaved(false); setLoading(true);
+    const sys = `You are a nutrition assistant. Return ONLY valid JSON, no markdown fences. ${profileSummary(profile)}`;
+    try {
+      let userContent;
+      if (mode === 'text') {
+        userContent = `Analyze this recipe and return JSON with these exact fields: dishName, totalServings, caloriesPerServing, proteinPerServing, carbsPerServing, fatPerServing, totalFiberPerServing, solFiberPerServing, insolFiberPerServing, recommendedServings (decimal), portionCalories, portionProtein, portionCarbs, portionFat, portionFiber, portionSolFiber, portionInsolFiber, portionDescription (plain-English like "a bowl the size of two fists"), scaledIngredients (array of strings for their portion), cookingForOne (how much of full recipe to make), tip.\n\nRecipe:\n${text}`;
+      } else {
+        userContent = [
+          { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: imgB64 } },
+          { type: 'text', text: `Identify all foods in this image. Estimate total nutrition. Recommend how much the user should eat for one meal (~33% of their daily ${profile.tdee} kcal). Return JSON: dishName, totalServings, recommendedServings, portionCalories, portionProtein, portionCarbs, portionFat, portionFiber, portionSolFiber, portionInsolFiber, portionDescription, scaledIngredients (array), cookingForOne, tip.` }
+        ];
+      }
+      const data = await callClaude(apiKey, sys, userContent);
+      setResult(data);
+    } catch(e) { setError('Analysis failed: ' + (e.message || 'Unknown error')); }
+    setLoading(false);
+  };
+
+  const saveResult = () => {
+    const saved = LS.get('portionly_saved', []);
+    const entry = { ...result, savedAt: new Date().toISOString(), id: Date.now() };
+    LS.set('portionly_saved', [entry, ...saved]);
+    setSaved(true);
+  };
+
+  return html`
+    <div>
+      <div class="card">
+        <div class="card-title">Analyse a recipe</div>
+        <div class="card-sub">Find out exactly how much to eat.</div>
+        <div class="toggle-group">
+          <button class=${'toggle-btn' + (mode==='text'?' active':'')} onClick=${()=>setMode('text')}>📝 Paste recipe</button>
+          <button class=${'toggle-btn' + (mode==='photo'?' active':'')} onClick=${()=>setMode('photo')}>📸 Photo</button>
+        </div>
+        ${mode === 'text' && html`
+          <div class="input-group">
+            <label class="input-label">Recipe text</label>
+            <textarea class="input" style=${{minHeight:130}} placeholder="Paste a recipe, ingredient list, or meal description..." value=${text} onInput=${e=>setText(e.target.value)}></textarea>
+          </div>
+        `}
+        ${mode === 'photo' && html`
+          ${img ? html`
+            <img src=${img} class="img-preview" alt="Food" />
+            <button class="btn btn-secondary mb-8" onClick=${()=>{setImg(null);setImgB64(null);}}>Change photo</button>
+          ` : html`
+            <div class="upload-area" onClick=${()=>fileRef.current?.click()}>
+              <div class="upload-icon">📷</div>
+              <div class="upload-text">Tap to take a photo or choose from library</div>
+            </div>
+            <input ref=${fileRef} type="file" accept="image/*" capture="environment" style=${{display:'none'}} onChange=${e=>handleImg(e.target.files[0])} />
+          `}
+        `}
+        ${error && html`<div class="error-box">${error}</div>`}
+        <button class="btn btn-primary" onClick=${analyze} disabled=${loading || (mode==='text'&&!text.trim()) || (mode==='photo'&&!imgB64)}>
+          ${loading ? '⏳ Analysing...' : '🔍 Analyse my portion'}
+        </button>
+      </div>
+      ${loading && html`
+        <div class="loading-wrap">
+          <div class="loading-spinner"></div>
+          <div class="loading-msg">Crunching the numbers for your body…</div>
+        </div>`}
+      ${result && html`<${ResultCard} result=${result} onSave=${saveResult} isSaved=${saved} />`}
+    </div>`;
+}
+
+// ─── TAB: INGREDIENTS ────────────────────────────────────────────────────
+function IngredientsTab({ profile, apiKey }) {
+  const [img, setImg] = useState(null);
+  const [imgB64, setImgB64] = useState(null);
+  const [mealIdea, setMealIdea] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [recipes, setRecipes] = useState([]);
+  const [expanded, setExpanded] = useState(null);
+  const [saved, setSaved] = useState({});
+  const [drag, setDrag] = useState(false);
+  const fileRef = useRef();
+
+  const handleImg = (file) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => { setImg(e.target.result); setImgB64(e.target.result.split(',')[1]); };
+    reader.readAsDataURL(file);
+  };
+
+  const analyze = async () => {
+    setError(''); setRecipes([]); setSaved({}); setLoading(true);
+    const sys = `You are a nutrition assistant. Return ONLY valid JSON. ${profileSummary(profile)}`;
+    const userContent = [
+      { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: imgB64 } },
+      { type: 'text', text: `Identify every visible ingredient. Suggest exactly 3 recipe ideas using only those ingredients${mealIdea ? ` (hint: ${mealIdea})` : ''}. For each recipe return JSON with: name, description, prepTime, steps (array of 3-5 strings), calories, protein, carbs, fat, totalFiber, solFiber, insolFiber (all already scaled to the correct portion for this user's targets), portionDescription, tip. Return a JSON array of 3 recipes.` }
+    ];
+    try {
+      const data = await callClaude(apiKey, sys, userContent);
+      setRecipes(Array.isArray(data) ? data : data.recipes || []);
+    } catch(e) { setError('Failed: ' + (e.message || 'Unknown error')); }
+    setLoading(false);
+  };
+
+  const saveRecipe = (r, i) => {
+    const s = LS.get('portionly_saved', []);
+    LS.set('portionly_saved', [{ ...r, savedAt: new Date().toISOString(), id: Date.now() }, ...s]);
+    setSaved(prev => ({ ...prev, [i]: true }));
+  };
+
+  return html`
+    <div>
+      <div class="card">
+        <div class="card-title">What's in my fridge?</div>
+        <div class="card-sub">Photo your ingredients — we'll suggest 3 meals sized just for you.</div>
+        ${img ? html`
+          <img src=${img} class="img-preview" alt="Ingredients" />
+          <button class="btn btn-secondary mb-8" onClick=${()=>{setImg(null);setImgB64(null);}}>Change photo</button>
+        ` : html`
+          <div class=${'upload-area' + (drag?' drag-over':'')}
+            onClick=${()=>fileRef.current?.click()}
+            onDragOver=${e=>{e.preventDefault();setDrag(true)}}
+            onDragLeave=${()=>setDrag(false)}
+            onDrop=${e=>{e.preventDefault();setDrag(false);handleImg(e.dataTransfer.files[0])}}>
+            <div class="upload-icon">🥦</div>
+            <div class="upload-text">Photo your fridge or ingredients<br/><small>Drag & drop or tap</small></div>
+          </div>
+          <input ref=${fileRef} type="file" accept="image/*" capture="environment" style=${{display:'none'}} onChange=${e=>handleImg(e.target.files[0])} />
+        `}
+        <div class="input-group">
+          <label class="input-label">Meal idea? (optional)</label>
+          <input class="input" type="text" placeholder="e.g. something warm with pasta" value=${mealIdea} onInput=${e=>setMealIdea(e.target.value)} />
+        </div>
+        ${error && html`<div class="error-box">${error}</div>`}
+        <button class="btn btn-primary" onClick=${analyze} disabled=${loading || !imgB64}>
+          ${loading ? '⏳ Finding recipes…' : '✨ Suggest my meals'}
+        </button>
+      </div>
+      ${loading && html`
+        <div class="loading-wrap">
+          <div class="loading-spinner"></div>
+          <div class="loading-msg">Cooking up ideas from your ingredients…</div>
+        </div>`}
+      ${recipes.map((r, i) => html`
+        <div class="recipe-expand-card" key=${i}>
+          <div class="recipe-expand-header" onClick=${()=>setExpanded(expanded===i?null:i)}>
+            <div style=${{flex:1}}>
+              <div class="saved-card-name">${r.name}</div>
+              <div class="recipe-time">⏱ ${r.prepTime}</div>
+              <div class="pills-row mt-8">
+                <span class="result-badge" style=${{background:'var(--green-dark)'}}>${Math.round(r.calories)} kcal</span>
+                <span class="result-badge" style=${{background:'var(--protein)'}}>${Math.round(r.protein)}g protein</span>
+              </div>
+            </div>
+            <div style=${{display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
+              <button class="star-btn" onClick=${e=>{e.stopPropagation();saveRecipe(r,i)}}>${saved[i]?'⭐':'☆'}</button>
+              <span class=${'chevron'+(expanded===i?' open':'')}>▾</span>
+            </div>
+          </div>
+          ${expanded===i && html`
+            <div class="recipe-expand-body">
+              <p style=${{fontSize:13,color:'var(--muted)',marginBottom:12}}>${r.description}</p>
+              <div class="macro-grid">
+                <${MacroBadge} color="var(--green-dark)" label="Cal" val=${Math.round(r.calories)} unit="kcal" />
+                <${MacroBadge} color="var(--protein)" label="Protein" val=${Math.round(r.protein)} unit="g" />
+                <${MacroBadge} color="var(--carbs)" label="Carbs" val=${Math.round(r.carbs)} unit="g" />
+                <${MacroBadge} color="var(--fat)" label="Fat" val=${Math.round(r.fat)} unit="g" />
+              </div>
+              ${r.portionDescription && html`<div class="portion-desc-box">🥣 ${r.portionDescription}</div>`}
+              <div class="section-title" style=${{marginTop:12}}>Steps</div>
+              <ul class="steps-list">
+                ${(r.steps||[]).map((s,j)=>html`
+                  <li key=${j}><span class="step-num">${j+1}</span>${s}</li>`)}
+              </ul>
+              <div class="flex-row mt-12">
+                <span class="result-badge" style=${{background:'var(--fiber)'}}>🌾 ${Math.round(r.totalFiber||0)}g fiber</span>
+              </div>
+              ${r.tip && html`<div class="tip-box"><div class="tip-label">💡 Tip</div>${r.tip}</div>`}
+            </div>`}
+        </div>`)}
+    </div>`;
+}
+
+// ─── TAB: LOG ────────────────────────────────────────────────────────────
+function LogTab({ profile, apiKey }) {
+  const todayStr = () => new Date().toISOString().slice(0,10);
+  const loadLog = () => {
+    const saved = LS.get('portionly_log_date');
+    if (saved !== todayStr()) { LS.set('portionly_log_date', todayStr()); LS.set('portionly_log', []); return []; }
+    return LS.get('portionly_log', []);
+  };
+
+  const [log, setLog] = useState(loadLog);
+  const [mode, setMode] = useState('search'); // 'search' | 'photo' | 'manual'
+  const [confirmDel, setConfirmDel] = useState(null);
+
+  // Search state
+  const [query, setQuery] = useState('');
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchResult, setSearchResult] = useState(null);
+  const [searchError, setSearchError] = useState('');
+  const [selectedServing, setSelectedServing] = useState(0);
+  const [servingQty, setServingQty] = useState(1);
+  const searchTimer = useRef(null);
+
+  // Photo state
+  const [photoImg, setPhotoImg] = useState(null);
+  const [photoB64, setPhotoB64] = useState(null);
+  const [photoLoading, setPhotoLoading] = useState(false);
+  const [photoError, setPhotoError] = useState('');
+  const [photoFoods, setPhotoFoods] = useState([]);
+  const photoRef = useRef();
+
+  // Manual form state
+  const [form, setForm] = useState({ name:'', calories:0, protein:0, carbs:0, fat:0, fiberTotal:0, fiberSol:0, fiberInsol:0 });
+
+  const totals = log.reduce((acc, e) => ({
+    calories: acc.calories+(e.calories||0), protein: acc.protein+(e.protein||0),
+    carbs: acc.carbs+(e.carbs||0), fat: acc.fat+(e.fat||0),
+    fiberTotal: acc.fiberTotal+(e.fiberTotal||0), fiberSol: acc.fiberSol+(e.fiberSol||0),
+    fiberInsol: acc.fiberInsol+(e.fiberInsol||0)
+  }), { calories:0, protein:0, carbs:0, fat:0, fiberTotal:0, fiberSol:0, fiberInsol:0 });
+
+  const addToLog = (entry) => {
+    const e = { ...entry, id: Date.now(), time: new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) };
+    const updated = [e, ...log];
+    setLog(updated); LS.set('portionly_log', updated);
+  };
+
+  const deleteEntry = (id) => {
+    if (confirmDel === id) {
+      const updated = log.filter(e => e.id !== id);
+      setLog(updated); LS.set('portionly_log', updated); setConfirmDel(null);
+    } else { setConfirmDel(id); setTimeout(()=>setConfirmDel(null), 3000); }
+  };
+
+  // ── Search ──
+  const doSearch = async (q) => {
+    if (!q.trim()) return;
+    setSearchLoading(true); setSearchResult(null); setSearchError(''); setSelectedServing(0); setServingQty(1);
+    try {
+      const data = await callClaude(apiKey,
+        'You are a precise nutrition database. Return ONLY valid JSON, no markdown.',
+        `Give me accurate nutrition data for: "${q}". Return JSON with: foodName (string), servings (array of objects, each with: label (e.g. "1 large egg", "100g", "1 cup"), calories, protein, carbs, fat, fiberTotal, fiberSol, fiberInsol — all numbers). Include 3-5 common serving sizes. Be precise with real USDA-level values.`
+      );
+      setSearchResult(data);
+    } catch(e) { setSearchError('Could not find that food. Try a different name.'); }
+    setSearchLoading(false);
+  };
+
+  const handleQueryInput = (val) => {
+    setQuery(val);
+    clearTimeout(searchTimer.current);
+    if (val.trim().length >= 2) {
+      searchTimer.current = setTimeout(() => doSearch(val), 900);
+    } else {
+      setSearchResult(null);
+    }
+  };
+
+  const currentServing = searchResult?.servings?.[selectedServing];
+  const scaledServing = currentServing ? {
+    name: searchResult.foodName,
+    calories: Math.round(currentServing.calories * servingQty),
+    protein: Math.round(currentServing.protein * servingQty * 10)/10,
+    carbs: Math.round(currentServing.carbs * servingQty * 10)/10,
+    fat: Math.round(currentServing.fat * servingQty * 10)/10,
+    fiberTotal: Math.round(currentServing.fiberTotal * servingQty * 10)/10,
+    fiberSol: Math.round((currentServing.fiberSol||0) * servingQty * 10)/10,
+    fiberInsol: Math.round((currentServing.fiberInsol||0) * servingQty * 10)/10,
+  } : null;
+
+  // ── Photo ──
+  const handlePhotoFile = (file) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => { setPhotoImg(e.target.result); setPhotoB64(e.target.result.split(',')[1]); };
+    reader.readAsDataURL(file);
+  };
+
+  const analyzePhoto = async () => {
+    setPhotoLoading(true); setPhotoError(''); setPhotoFoods([]);
+    try {
+      const data = await callClaude(apiKey,
+        'You are a nutrition expert. Return ONLY valid JSON, no markdown.',
+        [
+          { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: photoB64 } },
+          { type: 'text', text: `Identify every distinct food item visible in this image and estimate the quantity shown. Return JSON: { foods: [ { name, estimatedAmount (e.g. "2 large eggs", "1 cup cooked rice"), calories, protein, carbs, fat, fiberTotal, fiberSol, fiberInsol } ] }. Use realistic USDA-level values for the estimated portions shown.` }
+        ]
+      );
+      setPhotoFoods(data.foods || []);
+    } catch(e) { setPhotoError('Could not analyse photo. Try again.'); }
+    setPhotoLoading(false);
+  };
+
+  const remaining = profile.tdee - totals.calories;
+
+  return html`
+    <div>
+      <!-- Progress summary -->
+      <div class="card" style=${{marginBottom:12}}>
+        <div style=${{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+          <div>
+            <div style=${{fontFamily:"'Fraunces',serif",fontSize:32,fontWeight:700,color:remaining<0?'var(--error)':'var(--green-dark)',lineHeight:1}}>
+              ${Math.abs(remaining)} kcal
+            </div>
+            <div class="text-muted" style=${{marginTop:2}}>${remaining >= 0 ? 'left today' : 'over target'}</div>
+          </div>
+          <div style=${{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,fontSize:11}}>
+            ${[
+              {l:'Protein',v:totals.protein,t:profile.protein,c:'var(--protein)'},
+              {l:'Carbs',v:totals.carbs,t:profile.carbs,c:'var(--carbs)'},
+              {l:'Fat',v:totals.fat,t:profile.fat,c:'var(--fat)'},
+              {l:'Fiber',v:totals.fiberTotal,t:profile.fiberTotal,c:'var(--fiber)'}
+            ].map(m=>html`
+              <div key=${m.l} style=${{background:'var(--bg)',borderRadius:8,padding:'5px 7px',border:'1px solid var(--border)'}}>
+                <div style=${{fontWeight:700,color:m.v>m.t?'var(--error)':m.c}}>${Math.round(m.v)}g</div>
+                <div style=${{color:'var(--muted)',fontSize:10}}>${m.l} / ${m.t}g</div>
+              </div>`)}
+          </div>
+        </div>
+        <div style=${{marginTop:10,height:5,background:'var(--border)',borderRadius:3,overflow:'hidden'}}>
+          <div style=${{height:'100%',width:Math.min(100,Math.round(totals.calories/profile.tdee*100))+'%',background:remaining<0?'var(--error)':'var(--green)',borderRadius:3,transition:'width 0.4s'}}></div>
+        </div>
+        <div style=${{display:'flex',justifyContent:'space-between',fontSize:10,color:'var(--muted)',marginTop:3}}>
+          <span>${Math.round(totals.calories)} eaten</span><span>${profile.tdee} target</span>
+        </div>
+      </div>
+
+      <!-- Add food card -->
+      <div class="card">
+        <div class="card-title">Add food</div>
+        <div class="toggle-group" style=${{marginBottom:14}}>
+          <button class=${'toggle-btn'+(mode==='search'?' active':'')} onClick=${()=>{setMode('search');setSearchResult(null);setQuery('');}}>🔍 Search</button>
+          <button class=${'toggle-btn'+(mode==='photo'?' active':'')} onClick=${()=>{setMode('photo');setPhotoFoods([]);}}>📸 Photo</button>
+          <button class=${'toggle-btn'+(mode==='manual'?' active':'')} onClick=${()=>setMode('manual')}>✏️ Manual</button>
+        </div>
+
+        <!-- SEARCH MODE -->
+        ${mode==='search' && html`
+          <div>
+            <div style=${{position:'relative',marginBottom:12}}>
+              <input class="input" type="text" placeholder="Type a food… e.g. eggs, oatmeal, banana"
+                value=${query} onInput=${e=>handleQueryInput(e.target.value)}
+                style=${{paddingRight:36}} />
+              ${searchLoading && html`<div style=${{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',width:16,height:16,border:'2px solid var(--border)',borderTopColor:'var(--green)',borderRadius:'50%',animation:'spin 0.8s linear infinite'}}></div>`}
+              ${query && !searchLoading && html`<button style=${{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',color:'var(--muted)',fontSize:16}} onClick=${()=>{setQuery('');setSearchResult(null);}}>✕</button>`}
+            </div>
+            ${!searchResult && !searchLoading && !searchError && html`
+              <div style=${{display:'flex',flexWrap:'wrap',gap:6}}>
+                ${['Eggs','Oatmeal','Banana','Chicken breast','Brown rice','Greek yoghurt','Avocado','Salmon','Broccoli','Almonds','Whole milk','Sweet potato'].map(f=>html`
+                  <button key=${f} style=${{padding:'5px 10px',borderRadius:20,border:'1px solid var(--border)',background:'var(--bg)',fontSize:12,cursor:'pointer',color:'var(--text)',transition:'all 0.15s'}}
+                    onClick=${()=>{setQuery(f);doSearch(f);}}>
+                    ${f}
+                  </button>`)}
+              </div>`}
+            ${searchError && html`<div class="error-box">${searchError}</div>`}
+            ${searchResult && html`
+              <div>
+                <div style=${{fontFamily:"'Fraunces',serif",fontSize:17,fontWeight:600,marginBottom:10}}>${searchResult.foodName}</div>
+                <label class="input-label">Serving size</label>
+                <div style=${{display:'flex',flexDirection:'column',gap:6,marginBottom:12}}>
+                  ${(searchResult.servings||[]).map((s,i)=>html`
+                    <label key=${i} style=${{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',borderRadius:12,border:'1.5px solid '+(selectedServing===i?'var(--green)':'var(--border)'),background:selectedServing===i?'var(--green-light)':'var(--bg)',cursor:'pointer',transition:'all 0.15s'}}
+                      onClick=${()=>setSelectedServing(i)}>
+                      <div style=${{width:16,height:16,borderRadius:'50%',border:'2px solid '+(selectedServing===i?'var(--green-dark)':'var(--border)'),background:selectedServing===i?'var(--green-dark)':'transparent',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
+                        ${selectedServing===i && html`<div style=${{width:6,height:6,borderRadius:'50%',background:'white'}}></div>`}
+                      </div>
+                      <div style=${{flex:1}}>
+                        <div style=${{fontSize:13,fontWeight:600}}>${s.label}</div>
+                        <div style=${{fontSize:11,color:'var(--muted)'}}>${s.calories} kcal · P ${s.protein}g · C ${s.carbs}g · F ${s.fat}g</div>
+                      </div>
+                    </label>`)}
+                </div>
+                <label class="input-label">How many?</label>
+                <div style=${{display:'flex',alignItems:'center',gap:10,marginBottom:14}}>
+                  <button style=${{width:36,height:36,borderRadius:'50%',border:'1.5px solid var(--border)',background:'var(--bg)',fontSize:18,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}
+                    onClick=${()=>setServingQty(q=>Math.max(0.25,q-0.25))}>−</button>
+                  <div style=${{flex:1,textAlign:'center',fontFamily:"'Fraunces',serif",fontSize:22,fontWeight:700}}>${servingQty}</div>
+                  <button style=${{width:36,height:36,borderRadius:'50%',border:'1.5px solid var(--border)',background:'var(--bg)',fontSize:18,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}
+                    onClick=${()=>setServingQty(q=>q+0.25)}>+</button>
+                </div>
+                ${scaledServing && html`
+                  <div style=${{background:'var(--green-light)',border:'1px solid var(--border)',borderRadius:12,padding:'10px 12px',marginBottom:12}}>
+                    <div style=${{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:6,textAlign:'center'}}>
+                      <div><div style=${{fontWeight:700,fontSize:16,color:'var(--green-dark)'}}>${scaledServing.calories}</div><div style=${{fontSize:10,color:'var(--muted)'}}>kcal</div></div>
+                      <div><div style=${{fontWeight:700,fontSize:16,color:'var(--protein)'}}>${scaledServing.protein}g</div><div style=${{fontSize:10,color:'var(--muted)'}}>protein</div></div>
+                      <div><div style=${{fontWeight:700,fontSize:16,color:'var(--carbs)'}}>${scaledServing.carbs}g</div><div style=${{fontSize:10,color:'var(--muted)'}}>carbs</div></div>
+                      <div><div style=${{fontWeight:700,fontSize:16,color:'var(--fat)'}}>${scaledServing.fat}g</div><div style=${{fontSize:10,color:'var(--muted)'}}>fat</div></div>
+                    </div>
+                    <div style=${{textAlign:'center',fontSize:11,color:'var(--fiber)',marginTop:6,fontWeight:600}}>🌾 ${scaledServing.fiberTotal}g fiber</div>
+                  </div>
+                  <button class="btn btn-primary" onClick=${()=>{addToLog(scaledServing);setSearchResult(null);setQuery('');setServingQty(1);}}>+ Add to log</button>
+                `}
+              </div>`}
+          </div>
+        `}
+
+        <!-- PHOTO MODE -->
+        ${mode==='photo' && html`
+          <div>
+            ${photoImg ? html`
+              <img src=${photoImg} class="img-preview" alt="Food" />
+              <div style=${{display:'flex',gap:8,marginBottom:12}}>
+                <button class="btn btn-secondary" style=${{flex:1}} onClick=${()=>{setPhotoImg(null);setPhotoB64(null);setPhotoFoods([]);}}>Change</button>
+                <button class="btn btn-primary" style=${{flex:2}} onClick=${analyzePhoto} disabled=${photoLoading}>
+                  ${photoLoading?'⏳ Identifying…':'🔍 Identify & log'}
+                </button>
+              </div>
+            ` : html`
+              <div class="upload-area" onClick=${()=>photoRef.current?.click()}>
+                <div class="upload-icon">📷</div>
+                <div class="upload-text">Take a photo of your meal<br/><small>We'll identify every item and estimate portions</small></div>
+              </div>
+              <input ref=${photoRef} type="file" accept="image/*" capture="environment" style=${{display:'none'}}
+                onChange=${e=>handlePhotoFile(e.target.files[0])} />
+            `}
+            ${photoError && html`<div class="error-box">${photoError}</div>`}
+            ${photoLoading && html`
+              <div class="loading-wrap">
+                <div class="loading-spinner"></div>
+                <div class="loading-msg">Identifying foods in your photo…</div>
+              </div>`}
+            ${photoFoods.length > 0 && html`
+              <div>
+                <div class="section-title">Detected in photo</div>
+                <p class="text-muted" style=${{marginBottom:10}}>Tap items to add to your log.</p>
+                ${photoFoods.map((f,i)=>html`
+                  <div key=${i} style=${{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',background:'var(--bg)',border:'1px solid var(--border)',borderRadius:14,marginBottom:8}}>
+                    <div style=${{flex:1}}>
+                      <div style=${{fontSize:14,fontWeight:600}}>${f.name}</div>
+                      <div style=${{fontSize:11,color:'var(--muted)'}}>${f.estimatedAmount} · ${f.calories} kcal · P ${f.protein}g · C ${f.carbs}g · F ${f.fat}g</div>
+                      <div style=${{fontSize:11,color:'var(--fiber)'}}>🌾 ${f.fiberTotal||0}g fiber</div>
+                    </div>
+                    <button class="btn btn-sm btn-secondary" style=${{whiteSpace:'nowrap'}}
+                      onClick=${()=>addToLog({ name: f.name, calories:f.calories, protein:f.protein, carbs:f.carbs, fat:f.fat, fiberTotal:f.fiberTotal||0, fiberSol:f.fiberSol||0, fiberInsol:f.fiberInsol||0 })}>
+                      + Log
+                    </button>
+                  </div>`)}
+                <button class="btn btn-outline mt-8" onClick=${()=>{ photoFoods.forEach(f=>addToLog({name:f.name,calories:f.calories,protein:f.protein,carbs:f.carbs,fat:f.fat,fiberTotal:f.fiberTotal||0,fiberSol:f.fiberSol||0,fiberInsol:f.fiberInsol||0})); setPhotoFoods([]); setPhotoImg(null); setPhotoB64(null); }}>
+                  + Log all items
+                </button>
+              </div>`}
+          </div>
+        `}
+
+        <!-- MANUAL MODE -->
+        ${mode==='manual' && html`
+          <div>
+            <div class="input-group">
+              <label class="input-label">Food name</label>
+              <input class="input" type="text" placeholder="e.g. Chicken rice bowl" value=${form.name} onInput=${e=>setForm(f=>({...f,name:e.target.value}))} />
+            </div>
+            <div class="row-2">
+              <div class="input-group"><label class="input-label">Calories</label><input class="input" type="number" min="0" value=${form.calories} onInput=${e=>setForm(f=>({...f,calories:Number(e.target.value)}))} /></div>
+              <div class="input-group"><label class="input-label">Protein (g)</label><input class="input" type="number" min="0" value=${form.protein} onInput=${e=>setForm(f=>({...f,protein:Number(e.target.value)}))} /></div>
+            </div>
+            <div class="row-2">
+              <div class="input-group"><label class="input-label">Carbs (g)</label><input class="input" type="number" min="0" value=${form.carbs} onInput=${e=>setForm(f=>({...f,carbs:Number(e.target.value)}))} /></div>
+              <div class="input-group"><label class="input-label">Fat (g)</label><input class="input" type="number" min="0" value=${form.fat} onInput=${e=>setForm(f=>({...f,fat:Number(e.target.value)}))} /></div>
+            </div>
+            <div style=${{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10}}>
+              ${[['fiberTotal','Fiber'],['fiberSol','Sol.'],['fiberInsol','Insol.']].map(([k,l])=>html`
+                <div class="input-group" key=${k}><label class="input-label">${l} (g)</label><input class="input" type="number" min="0" value=${form[k]} onInput=${e=>setForm(f=>({...f,[k]:Number(e.target.value)}))} /></div>`)}
+            </div>
+            <button class="btn btn-primary" onClick=${()=>{ if(!form.name.trim())return; addToLog(form); setForm({name:'',calories:0,protein:0,carbs:0,fat:0,fiberTotal:0,fiberSol:0,fiberInsol:0}); }} disabled=${!form.name.trim()}>+ Log this</button>
+          </div>
+        `}
+      </div>
+
+      <!-- Log entries -->
+      ${log.length === 0 ? html`
+        <div class="empty-state">
+          <div class="empty-state-icon">📋</div>
+          <div class="empty-state-text">Nothing logged yet today.<br/>Search a food above to get started.</div>
+        </div>
+      ` : html`
+        <div class="section-title" style=${{marginTop:4}}>Today's entries</div>
+        ${log.map(e=>html`
+          <div class="log-entry" key=${e.id}>
+            <div class="log-entry-info">
+              <div class="log-entry-name">${e.name}</div>
+              <div class="log-entry-time">${e.time} · P:${e.protein}g C:${e.carbs}g F:${e.fat}g · 🌾${e.fiberTotal||0}g</div>
+            </div>
+            <div class="log-entry-kcal">${e.calories}</div>
+            <button class="delete-btn" onClick=${()=>deleteEntry(e.id)}>
+              ${confirmDel===e.id?'🗑️':'✕'}
+            </button>
+          </div>`)}
+      `}
+    </div>`;
+}
+
+// ─── TAB: SAVED ──────────────────────────────────────────────────────────
+function SavedTab() {
+  const [saved, setSaved] = useState(() => LS.get('portionly_saved', []));
+  const [expanded, setExpanded] = useState(null);
+
+  const del = (id) => {
+    const updated = saved.filter(r => r.id !== id);
+    setSaved(updated); LS.set('portionly_saved', updated);
+    if (expanded === id) setExpanded(null);
+  };
+
+  const fmtDate = (iso) => {
+    try { return new Date(iso).toLocaleDateString([], {month:'short',day:'numeric'}); } catch { return ''; }
+  };
+
+  if (saved.length === 0) return html`
+    <div class="empty-state">
+      <div class="empty-state-icon">⭐</div>
+      <div class="empty-state-text">No saved recipes yet.<br/>Star a result from Recipe or Ingredients tab.</div>
+    </div>`;
+
+  return html`
+    <div>
+      ${saved.map(r => html`
+        <div class="saved-card" key=${r.id}>
+          <div class="saved-card-header" onClick=${()=>setExpanded(expanded===r.id?null:r.id)}>
+            <div style=${{flex:1}}>
+              <div class="saved-card-name">${r.name||r.dishName||'Saved meal'}</div>
+              <div class="saved-card-date">${fmtDate(r.savedAt)}</div>
+              <div class="pills-row">
+                <span class="result-badge" style=${{background:'var(--green-dark)'}}>${Math.round(r.portionCalories||r.calories||0)} kcal</span>
+                <span class="result-badge" style=${{background:'var(--protein)'}}>${Math.round(r.portionProtein||r.protein||0)}g P</span>
+                <span class="result-badge" style=${{background:'var(--fiber)'}}>${Math.round(r.portionFiber||r.totalFiber||0)}g fiber</span>
+              </div>
+            </div>
+            <div style=${{display:'flex',gap:4}}>
+              <button class="trash-btn" onClick=${e=>{e.stopPropagation();del(r.id)}}>🗑</button>
+              <span class=${'chevron'+(expanded===r.id?' open':'')}>▾</span>
+            </div>
+          </div>
+          ${expanded===r.id && html`
+            <div class="saved-card-body">
+              ${r.portionDescription && html`<div class="portion-desc-box">🥣 ${r.portionDescription}</div>`}
+              <div class="macro-grid">
+                <${MacroBadge} color="var(--green-dark)" label="Cal" val=${Math.round(r.portionCalories||r.calories||0)} unit="kcal" />
+                <${MacroBadge} color="var(--protein)" label="Protein" val=${Math.round(r.portionProtein||r.protein||0)} unit="g" />
+                <${MacroBadge} color="var(--carbs)" label="Carbs" val=${Math.round(r.portionCarbs||r.carbs||0)} unit="g" />
+                <${MacroBadge} color="var(--fat)" label="Fat" val=${Math.round(r.portionFat||r.fat||0)} unit="g" />
+              </div>
+              ${r.scaledIngredients && r.scaledIngredients.length > 0 && html`
+                <div class="section-title" style=${{marginTop:8}}>Your portion</div>
+                <ul class="ingredients-list">
+                  ${r.scaledIngredients.map((ing,i)=>html`<li key=${i}>${ing}</li>`)}
+                </ul>`}
+              ${r.steps && r.steps.length > 0 && html`
+                <div class="section-title" style=${{marginTop:10}}>Steps</div>
+                <ul class="steps-list">
+                  ${r.steps.map((s,i)=>html`<li key=${i}><span class="step-num">${i+1}</span>${s}</li>`)}
+                </ul>`}
+              ${r.tip && html`<div class="tip-box"><div class="tip-label">💡 Tip</div>${r.tip}</div>`}
+            </div>`}
+        </div>`)}
+    </div>`;
+}
+
+// ─── TAB: GOALS ──────────────────────────────────────────────────────────
+function GoalsTab({ profile, onProfileUpdate }) {
+  const log = LS.get('portionly_log', []);
+  const logTotals = log.reduce((a,e)=>({
+    fiberTotal: a.fiberTotal+(e.fiberTotal||0),
+    fiberSol: a.fiberSol+(e.fiberSol||0),
+    fiberInsol: a.fiberInsol+(e.fiberInsol||0)
+  }), {fiberTotal:0,fiberSol:0,fiberInsol:0});
+
+  const [editMode, setEditMode] = useState(false);
+  const [sliders, setSliders] = useState({ proteinPct: profile.proteinPct||30, carbPct: profile.carbPct||45, fatPct: profile.fatPct||25 });
+
+  const adjustMacros = (changed, val) => {
+    const others = ['proteinPct','carbPct','fatPct'].filter(k=>k!==changed);
+    const remaining = 100-val;
+    const tot = sliders[others[0]]+sliders[others[1]];
+    let a = tot>0?Math.round(remaining*sliders[others[0]]/tot):Math.round(remaining/2);
+    let b = remaining-a;
+    if(a<5){a=5;b=remaining-5;} if(b<5){b=5;a=remaining-5;}
+    setSliders(s=>({...s,[changed]:val,[others[0]]:a,[others[1]]:b}));
+  };
+
+  const saveGoals = () => {
+    const updated = calcProfile({ ...profile, ...sliders });
+    LS.set('portionly_profile', updated);
+    onProfileUpdate(updated);
+    setEditMode(false);
+  };
+
+  const fiberPct = (v,t) => Math.min(100, t>0?Math.round(v/t*100):0);
+
+  const actLabel = {sedentary:'Sedentary',light:'Light',moderate:'Moderate',active:'Very active'};
+  const goalLabel = {lose:'Lose weight',maintain:'Maintain',gain:'Build muscle'};
+
+  const liveProtein = Math.round((profile.tdee * sliders.proteinPct/100)/4);
+  const liveCarbs = Math.round((profile.tdee * sliders.carbPct/100)/4);
+  const liveFat = Math.round((profile.tdee * sliders.fatPct/100)/9);
+
+  return html`
+    <div>
+      <div class="kcal-hero">
+        <div style=${{fontSize:12,opacity:0.8,marginBottom:4}}>DAILY CALORIE TARGET</div>
+        <div class="kcal-hero-num">${profile.tdee}</div>
+        <div class="kcal-hero-label">kcal · ${goalLabel[profile.goal]||''}</div>
+      </div>
+
+      <div class="card" style=${{marginBottom:12}}>
+        <div class="card-title">Per meal guide</div>
+        <div class="card-sub">Based on 3 meals a day</div>
+        <div class="meal-guide-grid">
+          <div class="meal-guide-box" style=${{borderColor:'var(--green)',background:'var(--green-light)'}}>
+            <div class="meal-guide-val" style=${{color:'var(--green-dark)'}}>${Math.round(profile.tdee/3)}</div>
+            <div class="meal-guide-label">kcal/meal</div>
+          </div>
+          <div class="meal-guide-box" style=${{borderColor:'var(--protein)',background:'#D97B6B15'}}>
+            <div class="meal-guide-val" style=${{color:'var(--protein)'}}>${Math.round(profile.protein/3)}g</div>
+            <div class="meal-guide-label">protein/meal</div>
+          </div>
+          <div class="meal-guide-box" style=${{borderColor:'var(--fiber)',background:'#9B8B5C15'}}>
+            <div class="meal-guide-val" style=${{color:'var(--fiber)'}}>${Math.round(profile.fiberTotal/3)}g</div>
+            <div class="meal-guide-label">fiber/meal</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style=${{marginBottom:12}}>
+        <div class="flex-between mb-8">
+          <div class="card-title" style=${{marginBottom:0}}>Macro targets</div>
+          <button class="btn btn-sm btn-secondary" onClick=${()=>{if(editMode)saveGoals();else setEditMode(true)}}>
+            ${editMode?'✓ Save':'Edit'}
+          </button>
+        </div>
+        ${[
+          {key:'proteinPct',label:'Protein',color:'var(--protein)',g:liveProtein},
+          {key:'carbPct',label:'Carbs',color:'var(--carbs)',g:liveCarbs},
+          {key:'fatPct',label:'Fat',color:'var(--fat)',g:liveFat}
+        ].map(m=>html`
+          <div class="slider-wrap" key=${m.key}>
+            <div class="slider-header">
+              <span class="slider-label" style=${{color:m.color}}>${m.label} — ${m.g}g</span>
+              <span class="slider-val">${sliders[m.key]}% · ${Math.round(profile.tdee*sliders[m.key]/100)} kcal</span>
+            </div>
+            ${editMode?html`
+              <input type="range" min="5" max="70" value=${sliders[m.key]} style=${{accentColor:m.color}}
+                onInput=${e=>adjustMacros(m.key,Number(e.target.value))} />
+            `:html`
+              <div style=${{height:8,background:'var(--border)',borderRadius:4,overflow:'hidden'}}>
+                <div style=${{height:'100%',width:sliders[m.key]/70*100+'%',background:m.color,borderRadius:4,transition:'width 0.3s'}}></div>
+              </div>
+            `}
+          </div>`)}
+      </div>
+
+      <div class="card" style=${{marginBottom:12}}>
+        <div class="card-title">Fiber progress today</div>
+        ${[
+          {label:'Total fiber',val:logTotals.fiberTotal,target:profile.fiberTotal,color:'var(--fiber)'},
+          {label:'Soluble fiber',val:logTotals.fiberSol,target:profile.fiberSol,color:'var(--sol-fiber)'},
+          {label:'Insoluble fiber',val:logTotals.fiberInsol,target:profile.fiberInsol,color:'var(--insol-fiber)'}
+        ].map(f=>html`
+          <div class="fiber-bar-wrap" key=${f.label}>
+            <div class="fiber-bar-row">
+              <span style=${{fontWeight:600,fontSize:13}}>${f.label}</span>
+              <span class="text-muted">${Math.round(f.val)}g / ${f.target}g</span>
+            </div>
+            <div class="fiber-bar-track">
+              <div class="fiber-bar-fill" style=${{width:fiberPct(f.val,f.target)+'%',background:f.color}}></div>
+            </div>
+          </div>`)}
+      </div>
+
+      <div class="card" style=${{marginBottom:12}}>
+        <div class="card-title">Your profile</div>
+        <table class="profile-table">
+          <tbody>
+            ${[
+              ['Name', profile.name],
+              ['Sex', profile.sex==='female'?'Female':'Male'],
+              ['Age', profile.age + ' years'],
+              ['Height', profile.heightCm + ' cm'],
+              ['Weight', profile.weightKg + ' kg'],
+              ['Activity', actLabel[profile.activity]||profile.activity],
+              ['Goal', goalLabel[profile.goal]||profile.goal]
+            ].map(([k,v])=>html`
+              <tr key=${k}><td>${k}</td><td>${v}</td></tr>`)}
+          </tbody>
+        </table>
+      </div>
+
+      <button class="btn btn-danger" onClick=${()=>{
+        if(confirm('Reset your profile? This will delete all data and restart onboarding.')) {
+          LS.del('portionly_profile'); LS.del('portionly_log'); LS.del('portionly_log_date'); LS.del('portionly_saved');
+          window.location.reload();
+        }
+      }}>🔄 Reset profile</button>
+      <div style=${{height:16}}></div>
+    </div>`;
+}
+
+// ─── MAIN APP ─────────────────────────────────────────────────────────────
+const TABS = [
+  { id:'recipe', icon:'🍽️', label:'Recipe' },
+  { id:'ingredients', icon:'🥕', label:'Ingredients' },
+  { id:'log', icon:'📋', label:'Log' },
+  { id:'saved', icon:'⭐', label:'Saved' },
+  { id:'goals', icon:'🎯', label:'Goals' }
+];
+
+function MainApp({ profile: initialProfile, apiKey }) {
+  const [tab, setTab] = useState('recipe');
+  const [profile, setProfile] = useState(initialProfile);
+
+  return html`
+    <div class="app-shell">
+      <header class="app-header">
+        <div class="header-top">
+          <div>
+            <div class="header-name">Hey, ${profile.name} 👋</div>
+            <div class="header-subtitle">Here's what your body needs today</div>
+          </div>
+        </div>
+        <div class="macro-pills">
+          <span class="pill pill-kcal">${profile.tdee} kcal</span>
+          <span class="pill pill-protein">${profile.protein}g protein</span>
+          <span class="pill pill-carbs">${profile.carbs}g carbs</span>
+          <span class="pill pill-fat">${profile.fat}g fat</span>
+          <span class="pill pill-fiber">${profile.fiberTotal}g fiber</span>
+        </div>
+      </header>
+
+      <div class="content-area">
+        ${tab==='recipe' && html`<${RecipeTab} profile=${profile} apiKey=${apiKey} />`}
+        ${tab==='ingredients' && html`<${IngredientsTab} profile=${profile} apiKey=${apiKey} />`}
+        ${tab==='log' && html`<${LogTab} profile=${profile} apiKey=${apiKey} />`}
+        ${tab==='saved' && html`<${SavedTab} />`}
+        ${tab==='goals' && html`<${GoalsTab} profile=${profile} onProfileUpdate=${p=>{setProfile(p);}} />`}
+      </div>
+
+      <nav class="bottom-nav">
+        ${TABS.map(t => html`
+          <button key=${t.id} class=${'nav-btn'+(tab===t.id?' active':'')} onClick=${()=>setTab(t.id)}>
+            <span class="nav-icon">${t.icon}</span>
+            <span class="nav-label">${t.label}</span>
+          </button>`)}
+      </nav>
+    </div>`;
+}
+
+// ─── ROOT ──────────────────────────────────────────────────────────────────
+function App() {
+  const [apiKey, setApiKey] = useState(() => LS.get('portionly_apikey'));
+  const [profile, setProfile] = useState(() => LS.get('portionly_profile'));
+  const [onboarded, setOnboarded] = useState(false);
+
+  const saveApiKey = (k) => { LS.set('portionly_apikey', k); setApiKey(k); };
+  const completeOnboarding = (data) => {
+    const p = calcProfile(data);
+    LS.set('portionly_profile', p);
+    setProfile(p);
+  };
+
+  if (!apiKey) return html`<${ApiKeyGate} onSave=${saveApiKey} />`;
+  if (!profile) return html`<${Onboarding} onComplete=${completeOnboarding} />`;
+  return html`<${MainApp} profile=${profile} apiKey=${apiKey} />`;
+}
+
+const root = createRoot(document.getElementById('root'));
+root.render(html`<${App} />`);
+</script>
+</body>
+</html>
